@@ -1,10 +1,15 @@
-import { useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useState } from "react";
+import { Shield, Eye, EyeOff } from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 
 export default function LoginPage() {
   const { signIn, loading, error } = useAuth();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -13,170 +18,90 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={styles.root}>
-      <div style={styles.card}>
-        <div style={styles.logoRow}>
-          <div style={styles.logoIcon}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            </svg>
-          </div>
-          <span style={styles.logoText}>Admin Console</span>
-        </div>
-
-        <h1 style={styles.heading}>Sign in</h1>
-        <p style={styles.sub}>Superadmin access only</p>
-
-        {error && <div style={styles.errorBanner}>{error}</div>}
-
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <div style={styles.field}>
-            <label style={styles.label}>Username</label>
-            <input
-              style={styles.input}
-              type="text"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              autoComplete="username"
-              required
-              placeholder="your_username"
-            />
-          </div>
-
-          <div style={styles.field}>
-            <label style={styles.label}>Password</label>
-            <div style={styles.pwWrap}>
-              <input
-                style={{ ...styles.input, paddingRight: 44 }}
-                type={showPw ? 'text' : 'password'}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                autoComplete="current-password"
-                required
-                placeholder="••••••••"
-              />
-              <button
-                type="button"
-                style={styles.eyeBtn}
-                onClick={() => setShowPw(p => !p)}
-                tabIndex={-1}
-              >
-                {showPw ? '🙈' : '👁'}
-              </button>
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto grid min-h-screen max-w-6xl items-center gap-10 px-6 py-10 lg:grid-cols-2">
+        <div className="hidden lg:block">
+          <div className="rounded-2xl border bg-card p-10 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                <Shield className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="text-sm font-semibold tracking-tight">Admin Console</div>
+                <div className="text-sm text-muted-foreground">Secure access to user management</div>
+              </div>
+            </div>
+            <div className="mt-8 grid gap-4 text-sm text-muted-foreground">
+              <div className="rounded-xl border bg-background p-4">
+                Only <span className="text-foreground">superusers</span> can sign in to this admin area.
+              </div>
+              <div className="rounded-xl border bg-background p-4">
+                Your session token is validated against <span className="text-foreground">/users/me</span> after login.
+              </div>
             </div>
           </div>
+        </div>
 
-          <button
-            type="submit"
-            style={{ ...styles.submitBtn, opacity: loading ? 0.7 : 1 }}
-            disabled={loading}
-          >
-            {loading ? 'Signing in…' : 'Sign in'}
-          </button>
-        </form>
+        <div className="mx-auto w-full max-w-md">
+          <Card className="shadow-sm">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl">Sign in</CardTitle>
+              <CardDescription>Superuser access only</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {error ? (
+                <div className="mb-4 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {error}
+                </div>
+              ) : null}
+
+              <form onSubmit={handleSubmit} className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    autoComplete="username"
+                    required
+                    placeholder="your_username"
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPw ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      autoComplete="current-password"
+                      required
+                      placeholder="••••••••"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowPw((p) => !p)}
+                      tabIndex={-1}
+                      aria-label={showPw ? "Hide password" : "Show password"}
+                    >
+                      {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <Button type="submit" disabled={loading} className="w-full">
+                  {loading ? "Signing in…" : "Sign in"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
 }
-
-const styles = {
-  root: {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: '#0f0f10',
-    fontFamily: "'DM Sans', system-ui, sans-serif",
-  },
-  card: {
-    width: 400,
-    background: '#18181b',
-    border: '1px solid #2a2a2f',
-    borderRadius: 16,
-    padding: '40px 40px 36px',
-  },
-  logoRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 32,
-  },
-  logoIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    background: '#6c47ff',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#fff',
-  },
-  logoText: {
-    fontSize: 15,
-    fontWeight: 600,
-    color: '#e4e4e7',
-    letterSpacing: '-0.01em',
-  },
-  heading: {
-    margin: '0 0 6px',
-    fontSize: 26,
-    fontWeight: 700,
-    color: '#fafafa',
-    letterSpacing: '-0.03em',
-  },
-  sub: {
-    margin: '0 0 28px',
-    fontSize: 13,
-    color: '#71717a',
-  },
-  errorBanner: {
-    background: '#2d1515',
-    border: '1px solid #7f1d1d',
-    borderRadius: 8,
-    padding: '10px 14px',
-    fontSize: 13,
-    color: '#fca5a5',
-    marginBottom: 20,
-  },
-  form: { display: 'flex', flexDirection: 'column', gap: 18 },
-  field: { display: 'flex', flexDirection: 'column', gap: 6 },
-  label: { fontSize: 13, fontWeight: 500, color: '#a1a1aa' },
-  input: {
-    background: '#09090b',
-    border: '1px solid #27272a',
-    borderRadius: 8,
-    padding: '10px 14px',
-    fontSize: 14,
-    color: '#e4e4e7',
-    outline: 'none',
-    width: '100%',
-    boxSizing: 'border-box',
-    transition: 'border-color 0.15s',
-  },
-  pwWrap: { position: 'relative' },
-  eyeBtn: {
-    position: 'absolute',
-    right: 12,
-    top: '50%',
-    transform: 'translateY(-50%)',
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    fontSize: 16,
-    padding: 0,
-    lineHeight: 1,
-  },
-  submitBtn: {
-    marginTop: 6,
-    background: '#6c47ff',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 8,
-    padding: '12px',
-    fontSize: 14,
-    fontWeight: 600,
-    cursor: 'pointer',
-    letterSpacing: '-0.01em',
-    transition: 'opacity 0.15s',
-  },
-};
