@@ -46,6 +46,8 @@ export const setUserActive = (id, is_active) =>
 export const deleteUser = (id) =>
   request(`/users/${id}`, { method: 'DELETE' });
 
+export const getMe = () => request('/users/me');
+
 export const updateMe = (payload) =>
   request('/users/me', { method: 'PATCH', body: JSON.stringify(payload) });
 

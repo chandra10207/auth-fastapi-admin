@@ -12,7 +12,7 @@ export function AuthProvider({ children }) {
         api.setToken(token);
         return JSON.parse(saved);
       }
-    } catch {}
+    } catch { }
     return null;
   });
 
@@ -27,13 +27,25 @@ export function AuthProvider({ children }) {
       api.setToken(data.access_token);
       localStorage.setItem('admin_token', data.access_token);
 
-      // Decode minimal info from JWT payload
-      const payload = JSON.parse(atob(data.access_token.split('.')[1]));
-      const userInfo = { id: payload.sub, username: payload.username };
+      const me = await api.getMe();
+      if (!me?.is_superuser) {
+        throw new Error('Superuser access only');
+      }
+
+      const userInfo = {
+        id: me.id,
+        username: me.username,
+        is_superuser: true,
+      };
       setUser(userInfo);
       localStorage.setItem('admin_user', JSON.stringify(userInfo));
       return true;
     } catch (err) {
+      // Ensure we don't keep a token for non-superusers / failed logins.
+      api.clearToken();
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_user');
+      setUser(null);
       setError(err.message);
       return false;
     } finally {
@@ -42,7 +54,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    try { await api.logout(); } catch {}
+    try { await api.logout(); } catch { }
     api.clearToken();
     localStorage.removeItem('admin_token');
     localStorage.removeItem('admin_user');
