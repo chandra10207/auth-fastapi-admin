@@ -49,14 +49,10 @@ export const deleteUser = (id) =>
 export const updateMe = (payload) =>
   request('/users/me', { method: 'PATCH', body: JSON.stringify(payload) });
 
-// Admin password reset — done by deleting + re-creating isn't ideal;
-// the cleanest approach with this API is a dedicated admin endpoint.
-// We expose a helper that calls the user's own change-password route
-// by temporarily impersonating via a provided admin-supplied new password.
-// Since the backend doesn't have an admin reset endpoint, we document this
-// and leave the function ready to wire up when added.
 export const adminResetPassword = async (userId, newPassword) => {
-  // NOTE: Wire this up to a real admin endpoint like:
-  // PATCH /users/{id}/reset-password  when added to the backend.
-  throw new Error('Admin password reset endpoint not yet implemented in backend. See api.js for details.');
+  // Backend expects a POST with `new_password` (see README).
+  return request(`/users/${userId}/reset-password`, {
+    method: 'POST',
+    body: JSON.stringify({ new_password: newPassword }),
+  });
 };
