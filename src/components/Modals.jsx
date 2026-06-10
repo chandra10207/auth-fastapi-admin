@@ -1,16 +1,28 @@
-import { useState, useEffect } from 'react';
-import * as api from '../api/client';
+import { useState, useEffect } from "react";
+import { Eye, EyeOff, AlertTriangle } from "lucide-react";
+import * as api from "../api/client";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
 
 export default function EditUserModal({ user, onClose, onUpdated }) {
-  const [email, setEmail] = useState(user?.email || '');
-  const [fullName, setFullName] = useState(user?.full_name || '');
+  const [email, setEmail] = useState(user?.email || "");
+  const [fullName, setFullName] = useState(user?.full_name || "");
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    setEmail(user?.email || '');
-    setFullName(user?.full_name || '');
-    setError('');
+    setEmail(user?.email || "");
+    setFullName(user?.full_name || "");
+    setError("");
   }, [user]);
 
   if (!user) return null;
@@ -18,18 +30,18 @@ export default function EditUserModal({ user, onClose, onUpdated }) {
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
-    setError('');
+    setError("");
     try {
       // NOTE: This calls /users/me — backend needs a superadmin PATCH /users/{id} endpoint
       // for editing other users. Wire this up when that endpoint is added.
       // For now the UI shape is complete and ready.
       const payload = {};
       if (email !== user.email) payload.email = email;
-      if (fullName !== (user.full_name || '')) payload.full_name = fullName;
+      if (fullName !== (user.full_name || "")) payload.full_name = fullName;
       if (Object.keys(payload).length === 0) { onClose(); return; }
 
       const updated = await api.request_internal(`/users/${user.id}`, {
-        method: 'PATCH',
+        method: "PATCH",
         body: JSON.stringify(payload),
       });
       onUpdated(updated);
@@ -42,52 +54,79 @@ export default function EditUserModal({ user, onClose, onUpdated }) {
   };
 
   return (
-    <Overlay onClose={onClose}>
-      <h2 style={s.title}>Edit user</h2>
-      <div style={s.usernameRow}>
-        <Avatar name={user.username} />
-        <div>
-          <div style={s.uname}>{user.username}</div>
-          <div style={s.uid}>ID: {user.id.slice(0, 8)}…</div>
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit user</DialogTitle>
+          <DialogDescription>
+            Update profile fields for <span className="font-medium text-foreground">{user.username}</span>.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex items-center gap-3 rounded-lg border bg-card px-3 py-2">
+          <Avatar name={user.username} />
+          <div className="min-w-0">
+            <div className="truncate text-sm font-semibold">{user.username}</div>
+            <div className="text-xs text-muted-foreground">ID: {user.id.slice(0, 8)}…</div>
+          </div>
         </div>
-      </div>
 
-      {error && <div style={s.err}>{error}</div>}
+        {error ? (
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {error}
+          </div>
+        ) : null}
 
-      <form onSubmit={handleSave} style={s.form}>
-        <Field label="Full name">
-          <input style={s.input} value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Jane Smith" />
-        </Field>
-        <Field label="Email">
-          <input style={s.input} type="email" value={email} onChange={e => setEmail(e.target.value)} required />
-        </Field>
+        <form onSubmit={handleSave} className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="fullName">Full name</Label>
+            <Input
+              id="fullName"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Jane Smith"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
 
-        <div style={s.actions}>
-          <button type="button" style={s.cancelBtn} onClick={onClose}>Cancel</button>
-          <button type="submit" style={s.saveBtn} disabled={saving}>
-            {saving ? 'Saving…' : 'Save changes'}
-          </button>
-        </div>
-      </form>
-    </Overlay>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? "Saving…" : "Save changes"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
 export function PasswordModal({ user, onClose }) {
-  const [newPw, setNewPw] = useState('');
-  const [confirm, setConfirm] = useState('');
+  const [newPw, setNewPw] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [show, setShow] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
   if (!user) return null;
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (newPw !== confirm) { setError('Passwords do not match'); return; }
+    if (newPw !== confirm) { setError("Passwords do not match"); return; }
     setSaving(true);
-    setError('');
+    setError("");
     try {
       await api.adminResetPassword(user.id, newPw);
       setSuccess(true);
@@ -100,69 +139,97 @@ export function PasswordModal({ user, onClose }) {
   };
 
   return (
-    <Overlay onClose={onClose}>
-      <h2 style={s.title}>Reset password</h2>
-      <div style={s.usernameRow}>
-        <Avatar name={user.username} color="#b45309" bg="#451a03" />
-        <div>
-          <div style={s.uname}>{user.username}</div>
-          <div style={s.uid}>{user.email}</div>
-        </div>
-      </div>
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Reset password</DialogTitle>
+          <DialogDescription>
+            Set a new password for <span className="font-medium text-foreground">{user.username}</span>.
+          </DialogDescription>
+        </DialogHeader>
 
-      {error && <div style={s.err}>{error}</div>}
-      {success && <div style={s.success}>Password updated!</div>}
-
-      <form onSubmit={handleSave} style={s.form}>
-        <Field label="New password">
-          <div style={{ position: 'relative' }}>
-            <input
-              style={{ ...s.input, paddingRight: 42 }}
-              type={show ? 'text' : 'password'}
-              value={newPw}
-              onChange={e => setNewPw(e.target.value)}
-              minLength={8}
-              required
-              placeholder="Min 8 chars, upper + lower + digit"
-            />
-            <button type="button" style={s.eye} onClick={() => setShow(p => !p)} tabIndex={-1}>
-              {show ? '🙈' : '👁'}
-            </button>
+        <div className="flex items-center gap-3 rounded-lg border bg-card px-3 py-2">
+          <Avatar name={user.username} color="text-amber-300" bg="bg-amber-500/10 border border-amber-500/30" />
+          <div className="min-w-0">
+            <div className="truncate text-sm font-semibold">{user.username}</div>
+            <div className="truncate text-xs text-muted-foreground">{user.email}</div>
           </div>
-        </Field>
-        <Field label="Confirm password">
-          <input
-            style={s.input}
-            type={show ? 'text' : 'password'}
-            value={confirm}
-            onChange={e => setConfirm(e.target.value)}
-            required
-          />
-        </Field>
-
-        <StrengthMeter password={newPw} />
-
-        <div style={s.actions}>
-          <button type="button" style={s.cancelBtn} onClick={onClose}>Cancel</button>
-          <button type="submit" style={{ ...s.saveBtn, background: '#b45309' }} disabled={saving || success}>
-            {saving ? 'Resetting…' : 'Reset password'}
-          </button>
         </div>
-      </form>
-    </Overlay>
+
+        {error ? (
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {error}
+          </div>
+        ) : null}
+        {success ? (
+          <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">
+            Password updated!
+          </div>
+        ) : null}
+
+        <form onSubmit={handleSave} className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="newPassword">New password</Label>
+            <div className="relative">
+              <Input
+                id="newPassword"
+                type={show ? "text" : "password"}
+                value={newPw}
+                onChange={(e) => setNewPw(e.target.value)}
+                minLength={8}
+                required
+                placeholder="Min 8 chars, upper + lower + digit"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-2 text-muted-foreground hover:text-foreground"
+                onClick={() => setShow((p) => !p)}
+                tabIndex={-1}
+                aria-label={show ? "Hide password" : "Show password"}
+              >
+                {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="confirmPassword">Confirm password</Label>
+            <Input
+              id="confirmPassword"
+              type={show ? "text" : "password"}
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              required
+            />
+          </div>
+
+          <StrengthMeter password={newPw} />
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="secondary" disabled={saving || success} className="bg-amber-500 text-black hover:opacity-90">
+              {saving ? "Resetting…" : "Reset password"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
 export function DeleteModal({ user, onClose, onDeleted }) {
   const [confirming, setConfirming] = useState(false);
-  const [typed, setTyped] = useState('');
-  const [error, setError] = useState('');
+  const [typed, setTyped] = useState("");
+  const [error, setError] = useState("");
 
   if (!user) return null;
 
   const handleDelete = async () => {
     setConfirming(true);
-    setError('');
+    setError("");
     try {
       await api.deleteUser(user.id);
       onDeleted(user.id);
@@ -174,62 +241,60 @@ export function DeleteModal({ user, onClose, onDeleted }) {
   };
 
   return (
-    <Overlay onClose={onClose}>
-      <div style={{ fontSize: 40, textAlign: 'center', marginBottom: 16 }}>⚠️</div>
-      <h2 style={{ ...s.title, textAlign: 'center', color: '#fca5a5' }}>Delete user?</h2>
-      <p style={{ fontSize: 13, color: '#a1a1aa', textAlign: 'center', margin: '0 0 20px' }}>
-        This will permanently delete <strong style={{ color: '#e4e4e7' }}>{user.username}</strong> and all their data. This cannot be undone.
-      </p>
+    <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-destructive">
+            <AlertTriangle className="h-5 w-5" />
+            Delete user?
+          </DialogTitle>
+          <DialogDescription>
+            This will permanently delete <span className="font-medium text-foreground">{user.username}</span>. This cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
 
-      {error && <div style={s.err}>{error}</div>}
+        {error ? (
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {error}
+          </div>
+        ) : null}
 
-      <Field label={`Type "${user.username}" to confirm`}>
-        <input
-          style={s.input}
-          value={typed}
-          onChange={e => setTyped(e.target.value)}
-          placeholder={user.username}
-        />
-      </Field>
+        <div className="grid gap-2">
+          <Label htmlFor="confirmDelete">{`Type "${user.username}" to confirm`}</Label>
+          <Input
+            id="confirmDelete"
+            value={typed}
+            onChange={(e) => setTyped(e.target.value)}
+            placeholder={user.username}
+          />
+        </div>
 
-      <div style={{ ...s.actions, marginTop: 24 }}>
-        <button type="button" style={s.cancelBtn} onClick={onClose}>Cancel</button>
-        <button
-          type="button"
-          style={{ ...s.saveBtn, background: typed === user.username ? '#991b1b' : '#3f3f46', cursor: typed === user.username ? 'pointer' : 'not-allowed' }}
-          disabled={typed !== user.username || confirming}
-          onClick={handleDelete}
-        >
-          {confirming ? 'Deleting…' : 'Delete permanently'}
-        </button>
-      </div>
-    </Overlay>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            disabled={typed !== user.username || confirming}
+            onClick={handleDelete}
+          >
+            {confirming ? "Deleting…" : "Delete permanently"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-// ── Shared sub-components ──────────────────────────────────────────────────────
-
-function Overlay({ onClose, children }) {
-  return (
-    <div style={s.overlay} onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={s.modal}>{children}</div>
-    </div>
-  );
-}
-
-function Field({ label, children }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-      <label style={s.label}>{label}</label>
-      {children}
-    </div>
-  );
-}
-
-function Avatar({ name = '?', color = '#818cf8', bg = '#1e1b4b' }) {
+function Avatar({
+  name = "?",
+  color = "text-primary",
+  bg = "bg-primary/10 border border-primary/30",
+}) {
   const initials = name.slice(0, 2).toUpperCase();
   return (
-    <div style={{ width: 40, height: 40, borderRadius: '50%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color, flexShrink: 0 }}>
+    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${bg} ${color} text-sm font-bold`}>
       {initials}
     </div>
   );
@@ -243,54 +308,22 @@ function StrengthMeter({ password }) {
   if (/\d/.test(password)) score++;
   if (/[^A-Za-z0-9]/.test(password)) score++;
 
-  const labels = ['', 'Very weak', 'Weak', 'Fair', 'Strong', 'Very strong'];
-  const colors = ['#3f3f46', '#ef4444', '#f97316', '#eab308', '#22c55e', '#16a34a'];
-  const color = colors[score] || '#3f3f46';
+  const labels = ["", "Very weak", "Weak", "Fair", "Strong", "Very strong"];
+  const colors = ["bg-zinc-700", "bg-red-500", "bg-orange-500", "bg-yellow-500", "bg-green-500", "bg-emerald-600"];
+  const color = colors[score] || "bg-zinc-700";
 
   if (!password) return null;
   return (
-    <div style={{ marginTop: -4 }}>
-      <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
-        {[1,2,3,4,5].map(i => (
-          <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= score ? color : '#27272a', transition: 'background 0.2s' }} />
+    <div className="-mt-1">
+      <div className="mb-1 flex gap-1">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div
+            key={i}
+            className={`h-1 flex-1 rounded ${i <= score ? color : "bg-zinc-800"} transition-colors`}
+          />
         ))}
       </div>
-      <span style={{ fontSize: 11, color }}>{labels[score]}</span>
+      <span className="text-xs text-muted-foreground">{labels[score]}</span>
     </div>
   );
 }
-
-const s = {
-  overlay: {
-    position: 'fixed', inset: 0,
-    background: 'rgba(0,0,0,0.7)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    zIndex: 1000,
-  },
-  modal: {
-    background: '#18181b',
-    border: '1px solid #27272a',
-    borderRadius: 16,
-    padding: '32px 32px 28px',
-    width: 420,
-    maxWidth: '90vw',
-    maxHeight: '90vh',
-    overflowY: 'auto',
-  },
-  title: { margin: '0 0 20px', fontSize: 20, fontWeight: 700, color: '#fafafa', letterSpacing: '-0.03em' },
-  usernameRow: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, padding: '14px 16px', background: '#09090b', borderRadius: 10, border: '1px solid #27272a' },
-  uname: { fontSize: 14, fontWeight: 600, color: '#e4e4e7' },
-  uid: { fontSize: 11, color: '#52525b', marginTop: 2 },
-  form: { display: 'flex', flexDirection: 'column', gap: 16 },
-  label: { fontSize: 12, fontWeight: 500, color: '#a1a1aa' },
-  input: {
-    background: '#09090b', border: '1px solid #27272a', borderRadius: 8,
-    padding: '9px 12px', fontSize: 14, color: '#e4e4e7', outline: 'none', width: '100%', boxSizing: 'border-box',
-  },
-  eye: { position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 15 },
-  actions: { display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 },
-  cancelBtn: { background: 'transparent', border: '1px solid #3f3f46', borderRadius: 8, padding: '9px 18px', fontSize: 13, color: '#a1a1aa', cursor: 'pointer' },
-  saveBtn: { background: '#6c47ff', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 20px', fontSize: 13, fontWeight: 600, cursor: 'pointer' },
-  err: { background: '#2d1515', border: '1px solid #7f1d1d', borderRadius: 8, padding: '9px 12px', fontSize: 13, color: '#fca5a5', marginBottom: 14 },
-  success: { background: '#052e16', border: '1px solid #14532d', borderRadius: 8, padding: '9px 12px', fontSize: 13, color: '#86efac', marginBottom: 14 },
-};
